@@ -1,0 +1,53 @@
+# Tooling and IDEs
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Android specific builds and signatures
+.gradle/
+app/
+android/app/debug.keystore
+android/app/profile.keystore
+android/app/release.keystore
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+
+# iOS / macOS specific build output and tracking
+ios/.generated/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/GeneratedPluginRegistrant.h
+ios/Flutter/GeneratedPluginRegistrant.m
+ios/Flutter/ephemeral/
+ios/Pods/
+ios/DerivedData/
+macos/Flutter/ephemeral/
+macos/Pods/
+
+# Web specific build environments
+web/flutter_bootstrap.js
+
+# Linux / Windows specific build assets
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+
+# Secrets and Environment Variables
+.env
+.env.*
+
+# IDE specific files (VS Code, Android Studio, IntelliJ)
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.history/
+
+# System / OS generated files
+.DS_Store
+Thumbs.db

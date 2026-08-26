@@ -1,0 +1,9 @@
+{
+  "name": "Safe Steps",
+  "short_name": "Safe Steps",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F7F7F7",
+  "theme_color": "#6C4DFF",
+  "description": "Safe Steps visitor management prototype"
+}
