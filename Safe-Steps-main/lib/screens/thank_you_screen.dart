@@ -16,7 +16,7 @@ class ThankYouScreen extends StatelessWidget {
           const Spacer(),
           const Text('Check out', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
           const Spacer(),
-          const Text('Thank you for visiting', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+          const Text('Thank you for visiting SafeSteps', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
           const SizedBox(height: 14),
           const SafeStepsLogo(),
           const Spacer(),
