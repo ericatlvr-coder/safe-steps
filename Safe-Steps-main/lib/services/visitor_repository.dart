@@ -1,84 +1,202 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/visitor.dart';
 
 class VisitorRepository {
-  static const _key = 'safe_steps_visitors_v1';
+  const VisitorRepository();
+
+  static const String _baseUrl =
+      String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://localhost:3000',
+  );
+
+  String get _visitorsUrl =>
+      '$_baseUrl/api/visitors';
+
+  // ==========================================
+  // LOAD ALL VISITORS
+  // ==========================================
 
   Future<List<Visitor>> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null || raw.isEmpty) return _seed();
-    try {
-      final decoded = jsonDecode(raw) as List<dynamic>;
-      return decoded
-          .whereType<Map>()
-          .map((e) => Visitor.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-    } catch (_) {
-      return _seed();
+    final response = await http
+        .get(
+          Uri.parse(_visitorsUrl),
+          headers: {
+            'Accept': 'application/json',
+          },
+        )
+        .timeout(
+          const Duration(seconds: 15),
+        );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Unable to load visitors. '
+        'HTTP ${response.statusCode}: '
+        '${response.body}',
+      );
     }
+
+    final decoded =
+        jsonDecode(response.body);
+
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception(
+        'Invalid response from visitor server.',
+      );
+    }
+
+    final rawVisitors =
+        decoded['visitors'];
+
+    if (rawVisitors is! List) {
+      throw Exception(
+        'Visitor list was not returned by the server.',
+      );
+    }
+
+    return rawVisitors
+        .map(
+          (item) => Visitor.fromJson(
+            Map<String, dynamic>.from(
+              item as Map,
+            ),
+          ),
+        )
+        .toList();
   }
 
-  Future<void> save(List<Visitor> visitors) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(visitors.map((e) => e.toJson()).toList()),
+  // ==========================================
+  // ADD / CHECK IN VISITOR
+  // ==========================================
+
+  Future<Visitor> add(
+    Visitor visitor,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse(_visitorsUrl),
+          headers: {
+            'Content-Type':
+                'application/json',
+            'Accept':
+                'application/json',
+          },
+          body: jsonEncode(
+            visitor.toJson(),
+          ),
+        )
+        .timeout(
+          const Duration(seconds: 15),
+        );
+
+    if (response.statusCode != 201) {
+      throw Exception(
+        'Unable to save visitor. '
+        'HTTP ${response.statusCode}: '
+        '${response.body}',
+      );
+    }
+
+    final decoded =
+        jsonDecode(response.body);
+
+    if (decoded is! Map<String, dynamic> ||
+        decoded['visitor'] == null) {
+      throw Exception(
+        'Visitor was saved but the server '
+        'returned an invalid response.',
+      );
+    }
+
+    return Visitor.fromJson(
+      Map<String, dynamic>.from(
+        decoded['visitor'] as Map,
+      ),
     );
   }
 
-  List<Visitor> _seed() {
-    final now = DateTime.now();
-    return [
-      Visitor(
-        id: 'seed-1',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        type: 'Individual',
-        purpose: 'Counselling',
-        location: 'Head Office',
-        hostName: 'John Smith',
-        checkIn: DateTime(now.year, now.month, now.day, 8, 13),
-        checkOut: DateTime(now.year, now.month, now.day, 9, 2),
-        status: 'Completed',
-      ),
-      Visitor(
-        id: 'seed-2',
-        name: 'Organisation 1',
-        email: 'org1@example.com',
-        type: 'Group',
-        purpose: 'Community Session',
-        location: 'Head Office',
-        hostName: 'Kate Spade',
-        checkIn: DateTime(now.year, now.month, now.day, 8, 33),
-        checkOut: DateTime(now.year, now.month, now.day, 10, 5),
-        status: 'Completed',
-      ),
-      Visitor(
-        id: 'seed-3',
-        name: 'Organisation 2',
-        email: 'org2@example.com',
-        type: 'Group',
-        purpose: 'Workshop',
-        location: 'Head Office',
-        hostName: 'Ben Sawyer',
-        checkIn: DateTime(now.year, now.month, now.day, 12, 1),
-        status: 'Group Active',
-      ),
-      Visitor(
-        id: 'seed-4',
-        name: 'Jane Doe',
-        email: 'jane.doe@example.com',
-        type: 'Individual',
-        purpose: 'Crisis support',
-        location: 'Head Office',
-        hostName: 'Natasha Ford',
-        checkIn: DateTime(now.year, now.month, now.day, 14, 0),
-        status: 'Active',
-      ),
-    ];
+  // ==========================================
+  // MARK VISITOR COMPLETE
+  // ==========================================
+
+  Future<void> complete(
+    String visitorId,
+  ) async {
+    final response = await http
+        .put(
+          Uri.parse(
+            '$_visitorsUrl/'
+            '$visitorId/complete',
+          ),
+          headers: {
+            'Accept': 'application/json',
+          },
+        )
+        .timeout(
+          const Duration(seconds: 15),
+        );
+
+    // Already complete is okay.
+    // Complete is final.
+    if (response.statusCode == 409) {
+      return;
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300) {
+      throw Exception(
+        'Unable to complete visitor. '
+        'HTTP ${response.statusCode}: '
+        '${response.body}',
+      );
+    }
+  }
+
+  // ==========================================
+  // CHECK OUT USING EMAIL
+  // ==========================================
+
+  Future<bool> checkOutByEmail(
+    String email,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse(
+            '$_baseUrl/api/visitors/checkout',
+          ),
+          headers: {
+            'Content-Type':
+                'application/json',
+            'Accept':
+                'application/json',
+          },
+          body: jsonEncode({
+            'email':
+                email.trim().toLowerCase(),
+          }),
+        )
+        .timeout(
+          const Duration(seconds: 15),
+        );
+
+    // No active visit for this email.
+    if (response.statusCode == 404) {
+      return false;
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300) {
+      throw Exception(
+        'Unable to check out visitor. '
+        'HTTP ${response.statusCode}: '
+        '${response.body}',
+      );
+    }
+
+    return true;
   }
 }

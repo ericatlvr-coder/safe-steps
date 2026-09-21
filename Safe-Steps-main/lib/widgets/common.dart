@@ -37,18 +37,36 @@ class SectionCard extends StatelessWidget {
 }
 
 class StatusPill extends StatelessWidget {
-  const StatusPill({super.key, required this.label});
+  const StatusPill({
+    super.key,
+    required this.label,
+  });
+
   final String label;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(
-          color: label.toLowerCase().contains('active')
-              ? SafeStepsColors.lime
-              : const Color(0xFFE4E4E4),
-          borderRadius: BorderRadius.circular(99),
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: label == 'Complete'
+            ? Colors.grey.shade200
+            : Colors.green.shade100,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: label == 'Complete'
+              ? Colors.grey.shade800
+              : Colors.green.shade800,
         ),
-        child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-      );
+      ),
+    );
+  }
 }

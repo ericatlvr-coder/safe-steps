@@ -25,47 +25,70 @@ class Visitor {
   final DateTime? checkOut;
   final String status;
 
-  Visitor copyWith({DateTime? checkOut, String? status}) => Visitor(
-        id: id,
-        name: name,
-        email: email,
-        type: type,
-        purpose: purpose,
-        location: location,
-        hostName: hostName,
-        contactNumber: contactNumber,
-        checkIn: checkIn,
-        checkOut: checkOut ?? this.checkOut,
-        status: status ?? this.status,
-      );
+  Visitor copyWith({
+    DateTime? checkOut,
+    String? status,
+    bool clearCheckOut = false,
+  }) {
+    return Visitor(
+      id: id,
+      name: name,
+      email: email,
+      type: type,
+      purpose: purpose,
+      location: location,
+      hostName: hostName,
+      contactNumber: contactNumber,
+      checkIn: checkIn,
 
-  factory Visitor.fromJson(Map<String, dynamic> json) => Visitor(
-        id: json['id'].toString(),
-        name: json['name'].toString(),
-        email: json['email'].toString(),
-        type: json['type'].toString(),
-        purpose: json['purpose'].toString(),
-        location: json['location'].toString(),
-        hostName: json['hostName'].toString(),
-        contactNumber: (json['contactNumber'] ?? '').toString(),
-        checkIn: DateTime.parse(json['checkIn'].toString()),
-        checkOut: json['checkOut'] == null
-            ? null
-            : DateTime.tryParse(json['checkOut'].toString()),
-        status: json['status'].toString(),
-      );
+      // If changing back to Active,
+      // this clears the previous checkout time.
+      checkOut: clearCheckOut
+          ? null
+          : checkOut ?? this.checkOut,
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'email': email,
-        'type': type,
-        'purpose': purpose,
-        'location': location,
-        'hostName': hostName,
-        'contactNumber': contactNumber,
-        'checkIn': checkIn.toIso8601String(),
-        'checkOut': checkOut?.toIso8601String(),
-        'status': status,
-      };
+      status: status ?? this.status,
+    );
+  }
+
+  factory Visitor.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return Visitor(
+      id: json['id'].toString(),
+      name: json['name'].toString(),
+      email: json['email'].toString(),
+      type: json['type'].toString(),
+      purpose: json['purpose'].toString(),
+      location: json['location'].toString(),
+      hostName: json['hostName'].toString(),
+      contactNumber:
+          (json['contactNumber'] ?? '').toString(),
+      checkIn: DateTime.parse(
+        json['checkIn'].toString(),
+      ),
+      checkOut: json['checkOut'] == null
+          ? null
+          : DateTime.tryParse(
+              json['checkOut'].toString(),
+            ),
+      status: json['status'].toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'type': type,
+      'purpose': purpose,
+      'location': location,
+      'hostName': hostName,
+      'contactNumber': contactNumber,
+      'checkIn': checkIn.toIso8601String(),
+      'checkOut': checkOut?.toIso8601String(),
+      'status': status,
+    };
+  }
 }
