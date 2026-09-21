@@ -6,11 +6,19 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+const isRailwayPrivate =
+  process.env.DATABASE_URL.includes(
+    'railway.internal'
+  );
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+
+  ssl: isRailwayPrivate
+      ? false
+      : {
+          rejectUnauthorized: false
+        }
 });
 
 pool.on('error', (error) => {
@@ -20,8 +28,14 @@ pool.on('error', (error) => {
   );
 });
 
-async function query(text, params = []) {
-  return pool.query(text, params);
+async function query(
+  text,
+  params = [],
+) {
+  return pool.query(
+    text,
+    params,
+  );
 }
 
 async function testConnection() {
