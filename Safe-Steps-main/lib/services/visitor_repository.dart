@@ -7,11 +7,12 @@ import '../models/visitor.dart';
 class VisitorRepository {
   const VisitorRepository();
 
-  static const String _baseUrl =
-      String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'http://localhost:3000',
-  );
+static const String _baseUrl =
+    String.fromEnvironment(
+  'API_URL',
+  defaultValue:
+      'https://safe-steps-production.up.railway.app',
+);
 
   String get _visitorsUrl =>
       '$_baseUrl/api/visitors';
