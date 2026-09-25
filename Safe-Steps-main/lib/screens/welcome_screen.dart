@@ -44,10 +44,7 @@ class WelcomeScreen extends StatelessWidget {
             SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final isWide =
-                      constraints.maxWidth >= 800;
-
-                  if (isWide) {
+                  if (constraints.maxWidth >= 800) {
                     return _LandscapeWelcome(
                       onCheckIn: () => _push(
                         context,
@@ -123,12 +120,15 @@ class _LandscapeWelcome extends StatelessWidget {
           maxWidth: 1200,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 48,
-            vertical: 28,
+          padding: const EdgeInsets.fromLTRB(
+            48,
+            24,
+            48,
+            20,
           ),
           child: Column(
             children: [
+              // HEADER
               const Row(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
@@ -138,8 +138,8 @@ class _LandscapeWelcome extends StatelessWidget {
                       'Welcome\nto',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 38,
-                        height: 1.12,
+                        fontSize: 34,
+                        height: 1.05,
                       ),
                     ),
                   ),
@@ -147,19 +147,13 @@ class _LandscapeWelcome extends StatelessWidget {
                 ],
               ),
 
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: 115,
-                  ),
-                  child: SafeStepsLogo(
-                    light: true,
-                  ),
-                ),
+              const SizedBox(height: 4),
+
+              const SafeStepsLogo(
+                light: true,
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
 
               Divider(
                 color:
@@ -168,103 +162,83 @@ class _LandscapeWelcome extends StatelessWidget {
                 ),
               ),
 
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints:
-                          const BoxConstraints(
-                        maxWidth: 760,
-                      ),
-                      child: Column(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Use QR codes below for contactless check-in/out',
-                            textAlign:
-                                TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                            ),
-                          ),
+              const SizedBox(height: 14),
 
-                          const SizedBox(height: 24),
+              // QR SECTION
+              const Text(
+                'Use QR codes below for contactless check-in/out',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
 
-                          const Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
-                            children: [
-                              _QrBlock(
-                                label: 'Check-in',
-                                data:
-                                    'safe-steps://checkin',
-                                size: 125,
-                              ),
-                              SizedBox(width: 60),
-                              _QrBlock(
-                                label: 'Check-out',
-                                data:
-                                    'safe-steps://checkout',
-                                size: 125,
-                              ),
-                            ],
-                          ),
+              const SizedBox(height: 16),
 
-                          const SizedBox(height: 40),
+              const Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  _QrBlock(
+                    label: 'Check-in',
+                    data: 'safe-steps://checkin',
+                    size: 112,
+                  ),
 
-                          const Text(
-                            'If you wish to use this kiosk, proceed below',
-                            textAlign:
-                                TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                            ),
-                          ),
+                  SizedBox(width: 70),
 
-                          const SizedBox(height: 20),
+                  _QrBlock(
+                    label: 'Check-out',
+                    data: 'safe-steps://checkout',
+                    size: 112,
+                  ),
+                ],
+              ),
 
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 220,
-                                child: _DarkButton(
-                                  label: 'Check-In',
-                                  onPressed: onCheckIn,
-                                  large: true,
-                                ),
-                              ),
+              const Spacer(),
 
-                              const SizedBox(width: 24),
+              // KIOSK BUTTONS
+              const Text(
+                'If you wish to use this kiosk, proceed below',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
 
-                              SizedBox(
-                                width: 220,
-                                child: _DarkButton(
-                                  label: 'Check-Out',
-                                  onPressed: onCheckOut,
-                                  large: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+              const SizedBox(height: 14),
+
+              Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 190,
+                    child: _DarkButton(
+                      label: 'Check-In',
+                      onPressed: onCheckIn,
+                      large: true,
                     ),
                   ),
-                ),
+
+                  const SizedBox(width: 24),
+
+                  SizedBox(
+                    width: 190,
+                    child: _DarkButton(
+                      label: 'Check-Out',
+                      onPressed: onCheckOut,
+                      large: true,
+                    ),
+                  ),
+                ],
               ),
 
-              Divider(
-                color:
-                    SafeStepsColors.lime.withOpacity(
-                  0.35,
-                ),
-              ),
+              const SizedBox(height: 16),
 
+              // ADMIN ONLY
               Center(
                 child: TextButton.icon(
                   onPressed: onAdmin,
@@ -374,13 +348,11 @@ class _PortraitWelcome extends StatelessWidget {
                 children: [
                   _QrBlock(
                     label: 'Check-in',
-                    data:
-                        'safe-steps://checkin',
+                    data: 'safe-steps://checkin',
                   ),
                   _QrBlock(
                     label: 'Check-out',
-                    data:
-                        'safe-steps://checkout',
+                    data: 'safe-steps://checkout',
                   ),
                 ],
               ),
@@ -416,7 +388,7 @@ class _PortraitWelcome extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 18),
 
               Center(
                 child: TextButton.icon(
@@ -568,7 +540,7 @@ class _DarkButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: large ? 64 : null,
+      height: large ? 54 : null,
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
@@ -577,7 +549,7 @@ class _DarkButton extends StatelessWidget {
           foregroundColor: Colors.white,
           padding: EdgeInsets.symmetric(
             horizontal: large ? 28 : 22,
-            vertical: large ? 18 : 15,
+            vertical: large ? 14 : 15,
           ),
           shape: RoundedRectangleBorder(
             borderRadius:
@@ -587,7 +559,7 @@ class _DarkButton extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: large ? 17 : 14,
+            fontSize: large ? 16 : 14,
             fontWeight: large
                 ? FontWeight.w600
                 : FontWeight.normal,
