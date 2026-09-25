@@ -3,20 +3,18 @@ import 'package:flutter/widgets.dart';
 import '../models/checkin_draft.dart';
 import '../models/host.dart';
 import '../models/visitor.dart';
-import '../services/entra_host_service.dart';
+import '../services/host_service.dart';
 import '../services/visitor_repository.dart';
 
 class SafeStepsStore extends ChangeNotifier {
   SafeStepsStore({
-    required EntraHostService hostService,
+    required HostService hostService,
     required VisitorRepository visitorRepository,
   })  : _hostService = hostService,
-        _visitorRepository =
-            visitorRepository;
+        _visitorRepository = visitorRepository;
 
-  final EntraHostService _hostService;
-  final VisitorRepository
-      _visitorRepository;
+  final HostService _hostService;
+  final VisitorRepository _visitorRepository;
 
   List<Host> hosts = const [];
   List<Visitor> visitors = const [];
@@ -25,8 +23,7 @@ class SafeStepsStore extends ChangeNotifier {
   String? hostSyncError;
   DateTime? lastHostSync;
 
-  String currentLocation =
-      'Head Office';
+  String currentLocation = 'Head Office';
 
   String get hostSourceLabel =>
       _hostService.sourceLabel;
@@ -188,8 +185,6 @@ class SafeStepsStore extends ChangeNotifier {
     Visitor visitor,
     String newStatus,
   ) async {
-    // Find the latest version currently
-    // loaded from the database.
     Visitor? currentVisitor;
 
     for (final item in visitors) {
@@ -203,24 +198,13 @@ class SafeStepsStore extends ChangeNotifier {
       return;
     }
 
-    // IMPORTANT:
     // Complete is permanent.
     if (currentVisitor.status ==
         'Complete') {
       return;
     }
 
-    // Our new database system only allows:
-    //
-    // Active -> Complete
-    //
-    // It intentionally does NOT allow:
-    //
-    // Complete -> Active
-    //
-    // Active visitors are already Active,
-    // so there is nothing to save if
-    // Active is selected.
+    // Only Active -> Complete is allowed.
     if (newStatus == 'Active') {
       return;
     }
@@ -326,7 +310,6 @@ class SafeStepsStore extends ChangeNotifier {
     ).length;
   }
 }
-
 
 // ==========================================
 // SAFE STEPS SCOPE

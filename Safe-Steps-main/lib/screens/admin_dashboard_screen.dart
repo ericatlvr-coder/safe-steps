@@ -7,8 +7,7 @@ import '../widgets/app_shell.dart';
 import '../widgets/common.dart';
 import 'make_entry_screen.dart';
 
-class AdminDashboardScreen
-    extends StatelessWidget {
+class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({
     super.key,
   });
@@ -64,8 +63,7 @@ class AdminDashboardScreen
                           SafeStepsColors
                               .purple,
                       fontWeight:
-                          FontWeight
-                              .w700,
+                          FontWeight.w700,
                     ),
                     columnSpacing: 24,
                     columns: const [
@@ -95,9 +93,11 @@ class AdminDashboardScreen
                             Text('Edit'),
                       ),
                     ],
-                    rows: store
-                        .visitors
-                        .reversed
+
+                    // The Railway API already
+                    // returns newest visitors first.
+                    // Do not reverse this list.
+                    rows: store.visitors
                         .take(8)
                         .map(
                           (visitor) =>
@@ -117,19 +117,23 @@ class AdminDashboardScreen
 
                 Align(
                   alignment:
-                      Alignment
-                          .centerRight,
+                      Alignment.centerRight,
                   child:
-                      FilledButton
-                          .tonal(
-                    onPressed: () {
-                      Navigator.push(
+                      FilledButton.tonal(
+                    onPressed: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) =>
                               const MakeEntryScreen(),
                         ),
                       );
+
+                      // Refresh the visitor
+                      // list after returning
+                      // from manual entry.
+                      await store
+                          .refreshVisitors();
                     },
                     child: const Text(
                       'Make Entry',
@@ -221,7 +225,6 @@ class AdminDashboardScreen
                 visitor.status,
           ),
         ),
-
         DataCell(
           isComplete
               ? const Icon(
@@ -365,8 +368,7 @@ class AdminDashboardScreen
       ),
       child: Column(
         mainAxisAlignment:
-            MainAxisAlignment
-                .center,
+            MainAxisAlignment.center,
         children: [
           Text(
             '$value',
