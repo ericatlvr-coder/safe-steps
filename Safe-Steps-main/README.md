@@ -1,80 +1,330 @@
-# Safe Steps — Figma to Flutter (Iteration 1)
+# Safe Steps — Visitor Management System
 
-A VS Code-ready Flutter prototype based on the supplied Safe Steps Figma screens and client feedback for **Assessment 1 – Iteration 1 Development and Progress Demonstration**.
+Safe Steps is a Flutter-based visitor management application designed for visitor check-in, checkout, host selection, visitor monitoring, and administration.
 
-## Implemented feedback
+The current system uses a Flutter frontend connected to a Node.js/Express API hosted on Railway. Visitor information is stored centrally in a Railway PostgreSQL database.
 
-- **Host Management added to the admin navigation.** Hosts are supplied by an Entra ID service layer rather than being maintained in a second host database.
-- **Microsoft Entra ID integration path included.** `backend/entra_proxy` securely reads users from Microsoft Graph. The Flutter app never stores an Entra client secret.
-- **Checkout password removed.** Checkout now asks for the visitor email address only.
-- **Employee In/Out removed.** The visitor register has no staff check-in/out workflow.
-- The original Figma flow is retained: kiosk welcome, individual/group check-in, host selection, returning-user login, admin login, terms, checkout confirmation, visitor activity view, admin dashboard, notifications/messages, location switching and manual admin entry.
+## Current Architecture
 
-## Quick start in VS Code
+```text
+Flutter Web Application
+        |
+        v
+Railway Node.js / Express API
+        |
+        v
+Railway PostgreSQL Database
+```
+
+The Flutter application does not connect directly to PostgreSQL. All visitor database operations are handled securely through the backend API.
+
+## Main Features
+
+- Individual visitor check-in
+- Group visitor check-in
+- Host selection
+- Host Management
+- Visitor checkout using email
+- Admin login
+- Admin Dashboard
+- Visitor activity monitoring
+- Manual visitor entry
+- Visitor status management
+- Active and Complete visitor statuses
+- Completed visitors are locked from further status changes
+- Location selection
+- Notifications/messages
+- Central PostgreSQL visitor storage
+- Shared visitor data between devices
+
+## Host Management
+
+Hosts are currently configured locally within the Safe Steps Flutter application.
+
+The current host list includes demonstration hosts used by the prototype.
+
+Host information is provided through the `HostService` service layer and is used by:
+
+- Host Selection
+- Host Management
+- Manual Visitor Entry
+
+No separate host database is currently required.
+
+## Visitor Database
+
+Visitor information is stored in PostgreSQL hosted on Railway.
+
+The database stores information including:
+
+- Visitor ID
+- Name
+- Email
+- Visitor type
+- Purpose of visit
+- Location
+- Host name
+- Contact number
+- Check-in time
+- Check-out time
+- Visitor status
+
+Visitor statuses are:
+
+```text
+Active
+Complete
+```
+
+Once a visitor has been marked as `Complete`, the status cannot be changed back to `Active`.
+
+## Backend API
+
+The Safe Steps backend is a Node.js and Express application hosted on Railway.
+
+The backend communicates with PostgreSQL and provides API endpoints used by the Flutter application.
+
+Main visitor endpoints include:
+
+```text
+GET  /api/visitors
+POST /api/visitors
+PUT  /api/visitors/:id/complete
+POST /api/visitors/checkout
+```
+
+The production backend is hosted on Railway.
+
+## Quick Start
 
 ### Requirements
 
-- Flutter SDK on PATH
-- VS Code with the Flutter and Dart extensions
-- Chrome for the easiest Iteration 1 demonstration
+Install:
 
-### Run immediately (self-contained Entra demo mirror)
+- Flutter SDK
+- VS Code
+- Flutter extension for VS Code
+- Dart extension for VS Code
+- Chrome
+
+The production visitor API is already hosted on Railway, so you do not need to run the Node.js backend locally just to run the Flutter application.
+
+### Run the Flutter Application
+
+From the Flutter project directory:
 
 ```bash
 flutter pub get
 flutter run -d chrome
 ```
 
-The app will use the built-in Entra demo mirror so the host-selection and Host Management screens work without tenant credentials.
+The application will connect to the deployed Railway API.
 
-### Run with the included Entra proxy
+## Run on Another Computer
 
-Terminal 1:
+Clone or download the project.
 
-```bash
-cd backend/entra_proxy
-cp .env.example .env
-npm install
-npm start
-```
-
-Terminal 2, from the project root:
+Open the Flutter project directory in VS Code and run:
 
 ```bash
 flutter pub get
-flutter run -d chrome --dart-define=ENTRA_SYNC_URL=http://localhost:7071/api/hosts
+flutter run -d chrome
 ```
 
-The VS Code launch configuration **Safe Steps (Chrome)** already includes that URL.
+The computer does not need:
 
-## Live Microsoft Entra ID
+- PostgreSQL installed locally
+- Railway database credentials
+- A local Node.js server
+- A local database
 
-The Flutter application should not directly hold an Entra client secret. For a live tenant, configure `backend/entra_proxy/.env` with an approved Entra app registration and set `DEMO_ENTRA=false`. The backend uses Microsoft Graph to read enabled users and returns them as hosts.
+The application connects to the same Railway backend and PostgreSQL database, so visitor records are shared between devices.
 
-If the organisation still has on-premises Active Directory, its identities must first be synchronised into Microsoft Entra ID using the organisation's approved Microsoft identity-sync configuration. That tenant-level configuration is outside Flutter itself. Once identities are present in Entra ID, Safe Steps reads them from the single source of truth through the proxy.
+## Testing
 
-## Prototype credentials
+Run Flutter static analysis:
 
-- Returning-user demo password: `demo123`
-- Admin Number: `admin`
-- Admin password: `admin123`
+```bash
+flutter analyze
+```
 
-These are Iteration 1 demonstration credentials only and must not be used in production.
+Run automated tests:
 
-## Project structure
+```bash
+flutter test
+```
+
+Run the application:
+
+```bash
+flutter run -d chrome
+```
+
+## Prototype Credentials
+
+Returning-user demo password:
+
+```text
+demo123
+```
+
+Admin Number:
+
+```text
+admin
+```
+
+Admin password:
+
+```text
+admin123
+```
+
+These credentials are for the prototype/demo only and should not be used for a production authentication system.
+
+## Project Structure
 
 ```text
 lib/
   main.dart
-  core/                 theme
-  models/               host, visitor, check-in draft
-  services/             Entra host service + visitor persistence
-  state/                app state
-  screens/              Figma-derived screens
-  widgets/              shared shell, logo and cards
-backend/entra_proxy/     secure Microsoft Graph/Entra bridge
-docs/                    Iteration 1 assessment/demo notes
-web/                     Flutter web launcher
-.vscode/                 VS Code launch configurations
+
+  core/
+    Application theme
+
+  models/
+    Host
+    Visitor
+    Check-in draft
+
+  services/
+    host_service.dart
+    visitor_repository.dart
+
+  state/
+    safe_steps_store.dart
+
+  screens/
+    Application screens
+
+  widgets/
+    Shared UI components
+
+backend/
+  api/
+    database.js
+    package.json
+    schema.sql
+    server.js
+
+docs/
+  Assessment and project documentation
+
+test/
+  Flutter tests
+
+web/
+  Flutter web files
 ```
 
+## Technology Stack
+
+### Frontend
+
+- Flutter
+- Dart
+- Flutter Web
+
+### Backend
+
+- Node.js
+- Express
+
+### Database
+
+- PostgreSQL
+
+### Hosting
+
+- Railway — backend API
+- Railway — PostgreSQL database
+- GitHub — source code
+- GitHub Pages — Flutter web frontend
+
+## Data Flow
+
+When a visitor checks in:
+
+```text
+Visitor
+   |
+   v
+Flutter Application
+   |
+   v
+Safe Steps Railway API
+   |
+   v
+PostgreSQL
+```
+
+When the Admin Dashboard loads visitor information:
+
+```text
+PostgreSQL
+   |
+   v
+Railway API
+   |
+   v
+Flutter Application
+   |
+   v
+Admin Dashboard
+```
+
+This allows multiple devices to access the same visitor information.
+
+## Deployment
+
+The backend and PostgreSQL database are deployed on Railway.
+
+The Flutter web frontend can be built using:
+
+```bash
+flutter build web --release
+```
+
+The generated production web application is located in:
+
+```text
+build/web/
+```
+
+The Flutter web frontend is intended to be deployed using GitHub Pages.
+
+## Security Notes
+
+Sensitive database credentials must not be stored inside the Flutter application or committed to GitHub.
+
+The PostgreSQL connection string is stored as a Railway environment variable and is used only by the backend.
+
+The local `.env` file and `node_modules` directory should not be committed to Git.
+
+## Current Project Status
+
+The following components are operational:
+
+- Flutter frontend
+- Host selection
+- Host Management
+- Visitor check-in
+- Visitor checkout
+- Manual visitor entry
+- Admin Dashboard
+- Active/Complete status management
+- Railway Node.js/Express API
+- Railway PostgreSQL database
+- Persistent visitor records
+- Shared visitor data across devices
+
+The next deployment stage is publishing the Flutter web frontend using GitHub Pages.
