@@ -145,6 +145,50 @@ app.get(
 
 
 // ========================================
+// GET NOTIFICATIONS
+// ========================================
+
+app.get(
+  '/api/notifications',
+  async (req, res) => {
+    try {
+      const result = await query(`
+        SELECT
+          id,
+          visitor_id AS "visitorId",
+          visitor_name AS "visitorName",
+          activity_type AS "activityType",
+          location,
+          created_at AS "createdAt"
+
+        FROM notifications
+
+        ORDER BY created_at DESC
+
+        LIMIT 50
+      `);
+
+      res.json({
+        success: true,
+        notifications: result.rows
+      });
+    } catch (error) {
+      console.error(
+        'Load notifications error:',
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        error:
+          'Unable to load notifications.'
+      });
+    }
+  }
+);
+
+
+// ========================================
 // CREATE VISITOR / CHECK IN
 // ========================================
 
@@ -245,9 +289,39 @@ app.post(
         ]
       );
 
+      const visitor =
+        result.rows[0];
+
+      // Store a permanent check-in notification.
+      await query(
+        `
+        INSERT INTO notifications (
+          visitor_id,
+          visitor_name,
+          activity_type,
+          location,
+          created_at
+        )
+
+        VALUES (
+          $1,
+          $2,
+          'check_in',
+          $3,
+          $4
+        )
+        `,
+        [
+          visitor.id,
+          visitor.name,
+          visitor.location,
+          visitor.checkIn
+        ]
+      );
+
       res.status(201).json({
         success: true,
-        visitor: result.rows[0]
+        visitor
       });
     } catch (error) {
       console.error(
@@ -346,9 +420,40 @@ app.put(
           [visitorId]
         );
 
+      const visitor =
+        result.rows[0];
+
+      // Store a NEW permanent completion
+      // notification instead of replacing
+      // the check-in notification.
+      await query(
+        `
+        INSERT INTO notifications (
+          visitor_id,
+          visitor_name,
+          activity_type,
+          location,
+          created_at
+        )
+
+        VALUES (
+          $1,
+          $2,
+          'complete',
+          $3,
+          NOW()
+        )
+        `,
+        [
+          visitor.id,
+          visitor.name,
+          visitor.location
+        ]
+      );
+
       res.json({
         success: true,
-        visitor: result.rows[0]
+        visitor
       });
     } catch (error) {
       console.error(
@@ -447,9 +552,39 @@ app.post(
           [visitorId]
         );
 
+      const visitor =
+        result.rows[0];
+
+      // Checkout also creates a permanent
+      // completion notification.
+      await query(
+        `
+        INSERT INTO notifications (
+          visitor_id,
+          visitor_name,
+          activity_type,
+          location,
+          created_at
+        )
+
+        VALUES (
+          $1,
+          $2,
+          'complete',
+          $3,
+          NOW()
+        )
+        `,
+        [
+          visitor.id,
+          visitor.name,
+          visitor.location
+        ]
+      );
+
       res.json({
         success: true,
-        visitor: result.rows[0]
+        visitor
       });
     } catch (error) {
       console.error(

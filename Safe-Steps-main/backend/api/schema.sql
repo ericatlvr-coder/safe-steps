@@ -24,3 +24,40 @@ ON visitors(email);
 CREATE INDEX IF NOT EXISTS
     idx_visitors_check_in
 ON visitors(check_in DESC);
+
+
+-- ==========================================
+-- NOTIFICATION / ACTIVITY HISTORY
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGSERIAL PRIMARY KEY,
+
+    visitor_id VARCHAR(100) NOT NULL,
+
+    visitor_name VARCHAR(150) NOT NULL,
+
+    activity_type VARCHAR(30) NOT NULL,
+
+    location VARCHAR(150) NOT NULL DEFAULT '',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT valid_notification_activity
+        CHECK (
+            activity_type IN (
+                'check_in',
+                'complete'
+            )
+        )
+);
+
+
+CREATE INDEX IF NOT EXISTS
+    idx_notifications_created_at
+ON notifications(created_at DESC);
+
+
+CREATE INDEX IF NOT EXISTS
+    idx_notifications_visitor_id
+ON notifications(visitor_id);
