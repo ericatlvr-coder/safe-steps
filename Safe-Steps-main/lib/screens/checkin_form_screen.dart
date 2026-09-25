@@ -35,27 +35,71 @@ class _CheckInFormScreenState extends State<CheckInFormScreen> {
   @override
   Widget build(BuildContext context) {
     final group = widget.type == 'Group';
+
     return KioskShell(
       child: Form(
         key: _formKey,
         child: ListView(
           children: [
-            const Text('Check-in with us', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+            const Text(
+              'Check-in with us',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
+              ),
+            ),
             const SizedBox(height: 16),
-            _field(_name, group ? 'Organisation name' : 'Full name'),
-            _field(_contact, group ? 'Representative Contact Number' : 'Contact Number', keyboard: TextInputType.phone),
-            _field(_email, group ? "Organisation's Email Address" : 'Email Address', keyboard: TextInputType.emailAddress, email: true),
-            _field(_purpose, 'Purpose of Visit'),
-            _field(_location, 'Location Attended'),
+            _field(
+              _name,
+              group ? 'Organisation name' : 'Full name',
+            ),
+            _field(
+              _contact,
+              group
+                  ? 'Representative Contact Number'
+                  : 'Contact Number',
+              keyboard: TextInputType.phone,
+            ),
+            _field(
+              _email,
+              group
+                  ? "Organisation's Email Address"
+                  : 'Email Address',
+              keyboard: TextInputType.emailAddress,
+              email: true,
+            ),
+            _field(
+              _purpose,
+              'Purpose of Visit',
+            ),
+            _field(
+              _location,
+              'Location Attended',
+            ),
             const SizedBox(height: 4),
-            TermsLink(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen()))),
+            TermsLink(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TermsScreen(),
+                ),
+              ),
+            ),
             Align(
               alignment: Alignment.center,
               child: FilledButton(
                 onPressed: _next,
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 28),
-                  child: Text('Next', style: TextStyle(fontSize: 18)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 28,
+                  ),
+                  child: Text(
+                    'Next',
+                    style: TextStyle(
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -65,17 +109,33 @@ class _CheckInFormScreenState extends State<CheckInFormScreen> {
     );
   }
 
-  Widget _field(TextEditingController controller, String label, {TextInputType? keyboard, bool email = false}) {
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    TextInputType? keyboard,
+    bool email = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboard,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+        ),
         validator: (value) {
           final text = value?.trim() ?? '';
-          if (text.isEmpty) return '$label is required';
-          if (email && (!text.contains('@') || !text.contains('.'))) return 'Enter a valid email address';
+
+          if (text.isEmpty) {
+            return '$label is required';
+          }
+
+          if (email &&
+              (!text.contains('@') ||
+                  !text.contains('.'))) {
+            return 'Enter a valid email address';
+          }
+
           return null;
         },
       ),
@@ -84,7 +144,9 @@ class _CheckInFormScreenState extends State<CheckInFormScreen> {
 
   void _next() {
     if (!_formKey.currentState!.validate()) return;
+
     final store = SafeStepsScope.of(context);
+
     final draft = CheckInDraft(
       type: widget.type,
       name: _name.text,
@@ -93,10 +155,18 @@ class _CheckInFormScreenState extends State<CheckInFormScreen> {
       purpose: _purpose.text,
       location: _location.text,
     );
-    store.setLocation(_location.text.trim());
+
+    store.setLocation(
+      _location.text.trim(),
+    );
+
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => HostSelectionScreen(draft: draft)),
+      MaterialPageRoute(
+        builder: (_) => HostSelectionScreen(
+          draft: draft,
+        ),
+      ),
     );
   }
 }
