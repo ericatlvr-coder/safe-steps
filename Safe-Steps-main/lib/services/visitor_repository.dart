@@ -2,20 +2,24 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/activity_notification.dart';
 import '../models/visitor.dart';
 
 class VisitorRepository {
   const VisitorRepository();
 
-static const String _baseUrl =
-    String.fromEnvironment(
-  'API_URL',
-  defaultValue:
-      'https://safe-steps-production.up.railway.app',
-);
+  static const String _baseUrl =
+      String.fromEnvironment(
+    'API_URL',
+    defaultValue:
+        'https://safe-steps-production.up.railway.app',
+  );
 
   String get _visitorsUrl =>
       '$_baseUrl/api/visitors';
+
+  String get _notificationsUrl =>
+      '$_baseUrl/api/notifications';
 
   // ==========================================
   // LOAD ALL VISITORS
@@ -62,6 +66,62 @@ static const String _baseUrl =
     return rawVisitors
         .map(
           (item) => Visitor.fromJson(
+            Map<String, dynamic>.from(
+              item as Map,
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  // ==========================================
+  // LOAD NOTIFICATION HISTORY
+  // ==========================================
+
+  Future<List<ActivityNotification>>
+      loadNotifications() async {
+    final response = await http
+        .get(
+          Uri.parse(_notificationsUrl),
+          headers: {
+            'Accept': 'application/json',
+          },
+        )
+        .timeout(
+          const Duration(seconds: 15),
+        );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Unable to load notifications. '
+        'HTTP ${response.statusCode}: '
+        '${response.body}',
+      );
+    }
+
+    final decoded =
+        jsonDecode(response.body);
+
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception(
+        'Invalid response from notification server.',
+      );
+    }
+
+    final rawNotifications =
+        decoded['notifications'];
+
+    if (rawNotifications is! List) {
+      throw Exception(
+        'Notification list was not returned '
+        'by the server.',
+      );
+    }
+
+    return rawNotifications
+        .map(
+          (item) =>
+              ActivityNotification.fromJson(
             Map<String, dynamic>.from(
               item as Map,
             ),
@@ -141,8 +201,6 @@ static const String _baseUrl =
           const Duration(seconds: 15),
         );
 
-    // Already complete is okay.
-    // Complete is final.
     if (response.statusCode == 409) {
       return;
     }
@@ -184,7 +242,6 @@ static const String _baseUrl =
           const Duration(seconds: 15),
         );
 
-    // No active visit for this email.
     if (response.statusCode == 404) {
       return false;
     }

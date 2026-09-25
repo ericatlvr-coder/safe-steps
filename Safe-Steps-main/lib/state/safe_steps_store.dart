@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../models/activity_notification.dart';
 import '../models/checkin_draft.dart';
 import '../models/host.dart';
 import '../models/visitor.dart';
@@ -19,6 +20,10 @@ class SafeStepsStore extends ChangeNotifier {
   List<Host> hosts = const [];
   List<Visitor> visitors = const [];
 
+  // Permanent notification/activity history
+  // loaded from Railway PostgreSQL.
+  List<ActivityNotification> notifications = const [];
+
   bool hostSyncing = false;
   String? hostSyncError;
   DateTime? lastHostSync;
@@ -33,6 +38,7 @@ class SafeStepsStore extends ChangeNotifier {
   // ==========================================
 
   Future<void> initialise() async {
+    // Load visitors.
     try {
       visitors =
           await _visitorRepository.load();
@@ -44,6 +50,20 @@ class SafeStepsStore extends ChangeNotifier {
       visitors = const [];
     }
 
+    // Load notification history.
+    try {
+      notifications =
+          await _visitorRepository
+              .loadNotifications();
+    } catch (e) {
+      debugPrint(
+        'Could not load notifications: $e',
+      );
+
+      notifications = const [];
+    }
+
+    // Load hosts.
     await syncHosts(
       silent: true,
     );
@@ -95,6 +115,18 @@ class SafeStepsStore extends ChangeNotifier {
   }
 
   // ==========================================
+  // REFRESH NOTIFICATIONS FROM RAILWAY
+  // ==========================================
+
+  Future<void> refreshNotifications() async {
+    notifications =
+        await _visitorRepository
+            .loadNotifications();
+
+    notifyListeners();
+  }
+
+  // ==========================================
   // CHECK IN
   // ==========================================
 
@@ -138,14 +170,32 @@ class SafeStepsStore extends ChangeNotifier {
     );
 
     // Save visitor to Railway PostgreSQL.
+    //
+    // The backend also creates a permanent
+    // "check_in" notification.
     final savedVisitor =
         await _visitorRepository.add(
       newVisitor,
     );
 
-    // Reload so the app matches the database.
+    // Reload visitors so the app matches
+    // the database.
     visitors =
         await _visitorRepository.load();
+
+    // Reload notifications so the new
+    // check-in activity is immediately
+    // available in this app.
+    try {
+      notifications =
+          await _visitorRepository
+              .loadNotifications();
+    } catch (e) {
+      debugPrint(
+        'Could not refresh notifications '
+        'after check-in: $e',
+      );
+    }
 
     notifyListeners();
 
@@ -169,8 +219,23 @@ class SafeStepsStore extends ChangeNotifier {
       return false;
     }
 
+    // Reload visitors.
     visitors =
         await _visitorRepository.load();
+
+    // The backend creates a permanent
+    // completion notification during
+    // checkout, so reload notifications too.
+    try {
+      notifications =
+          await _visitorRepository
+              .loadNotifications();
+    } catch (e) {
+      debugPrint(
+        'Could not refresh notifications '
+        'after checkout: $e',
+      );
+    }
 
     notifyListeners();
 
@@ -217,9 +282,24 @@ class SafeStepsStore extends ChangeNotifier {
       currentVisitor.id,
     );
 
-    // Reload from PostgreSQL.
+    // Reload visitors from PostgreSQL.
     visitors =
         await _visitorRepository.load();
+
+    // The backend creates a NEW permanent
+    // completion notification. Reload the
+    // notification history so both the
+    // check-in and completion remain.
+    try {
+      notifications =
+          await _visitorRepository
+              .loadNotifications();
+    } catch (e) {
+      debugPrint(
+        'Could not refresh notifications '
+        'after completion: $e',
+      );
+    }
 
     notifyListeners();
   }
