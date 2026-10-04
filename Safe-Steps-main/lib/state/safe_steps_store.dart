@@ -30,8 +30,19 @@ class SafeStepsStore extends ChangeNotifier {
 
   String currentLocation = 'Head Office';
 
-  String get hostSourceLabel =>
-      _hostService.sourceLabel;
+  String get hostSourceLabel => _hostService.sourceLabel;
+
+  // ==========================================
+  // NOTIFICATION SORTING
+  // ==========================================
+
+  void _sortNotifications() {
+    notifications = List<ActivityNotification>.from(
+      notifications,
+    )..sort(
+        (a, b) => b.createdAt.compareTo(a.createdAt),
+      );
+  }
 
   // ==========================================
   // INITIALISE
@@ -40,8 +51,7 @@ class SafeStepsStore extends ChangeNotifier {
   Future<void> initialise() async {
     // Load visitors.
     try {
-      visitors =
-          await _visitorRepository.load();
+      visitors = await _visitorRepository.load();
     } catch (e) {
       debugPrint(
         'Could not load visitors: $e',
@@ -50,11 +60,12 @@ class SafeStepsStore extends ChangeNotifier {
       visitors = const [];
     }
 
-    // Load notification history.
+    // Load permanent notification history.
     try {
       notifications =
-          await _visitorRepository
-              .loadNotifications();
+          await _visitorRepository.loadNotifications();
+
+      _sortNotifications();
     } catch (e) {
       debugPrint(
         'Could not load notifications: $e',
@@ -86,17 +97,14 @@ class SafeStepsStore extends ChangeNotifier {
     }
 
     try {
-      hosts =
-          await _hostService.fetchHosts();
+      hosts = await _hostService.fetchHosts();
 
-      lastHostSync =
-          DateTime.now();
+      lastHostSync = DateTime.now();
     } catch (e) {
-      hostSyncError =
-          e.toString().replaceFirst(
-                'Exception: ',
-                '',
-              );
+      hostSyncError = e.toString().replaceFirst(
+            'Exception: ',
+            '',
+          );
     } finally {
       hostSyncing = false;
       notifyListeners();
@@ -108,8 +116,7 @@ class SafeStepsStore extends ChangeNotifier {
   // ==========================================
 
   Future<void> refreshVisitors() async {
-    visitors =
-        await _visitorRepository.load();
+    visitors = await _visitorRepository.load();
 
     notifyListeners();
   }
@@ -120,8 +127,9 @@ class SafeStepsStore extends ChangeNotifier {
 
   Future<void> refreshNotifications() async {
     notifications =
-        await _visitorRepository
-            .loadNotifications();
+        await _visitorRepository.loadNotifications();
+
+    _sortNotifications();
 
     notifyListeners();
   }
@@ -138,35 +146,20 @@ class SafeStepsStore extends ChangeNotifier {
       id: DateTime.now()
           .microsecondsSinceEpoch
           .toString(),
-
-      name:
-          draft.name.trim(),
-
-      email: draft.email
-          .trim()
-          .toLowerCase(),
-
-      type:
-          draft.type,
-
-      purpose:
-          draft.purpose.trim(),
-
-      location:
-          draft.location.trim(),
-
+      name: draft.name.trim(),
+      email: draft.email.trim().toLowerCase(),
+      type: draft.type,
+      purpose: draft.purpose.trim(),
+      location: draft.location.trim(),
       hostName:
           host?.displayName ??
           'Other / Reception',
+      contactNumber: draft.contactNumber.trim(),
 
-      contactNumber:
-          draft.contactNumber.trim(),
+      // Actual current device time.
+      checkIn: DateTime.now(),
 
-      checkIn:
-          DateTime.now(),
-
-      status:
-          'Active',
+      status: 'Active',
     );
 
     // Save visitor to Railway PostgreSQL.
@@ -183,13 +176,12 @@ class SafeStepsStore extends ChangeNotifier {
     visitors =
         await _visitorRepository.load();
 
-    // Reload notifications so the new
-    // check-in activity is immediately
-    // available in this app.
+    // Reload permanent notification history.
     try {
       notifications =
-          await _visitorRepository
-              .loadNotifications();
+          await _visitorRepository.loadNotifications();
+
+      _sortNotifications();
     } catch (e) {
       debugPrint(
         'Could not refresh notifications '
@@ -210,8 +202,7 @@ class SafeStepsStore extends ChangeNotifier {
     String email,
   ) async {
     final success =
-        await _visitorRepository
-            .checkOutByEmail(
+        await _visitorRepository.checkOutByEmail(
       email,
     );
 
@@ -224,12 +215,12 @@ class SafeStepsStore extends ChangeNotifier {
         await _visitorRepository.load();
 
     // The backend creates a permanent
-    // completion notification during
-    // checkout, so reload notifications too.
+    // completion notification during checkout.
     try {
       notifications =
-          await _visitorRepository
-              .loadNotifications();
+          await _visitorRepository.loadNotifications();
+
+      _sortNotifications();
     } catch (e) {
       debugPrint(
         'Could not refresh notifications '
@@ -264,8 +255,7 @@ class SafeStepsStore extends ChangeNotifier {
     }
 
     // Complete is permanent.
-    if (currentVisitor.status ==
-        'Complete') {
+    if (currentVisitor.status == 'Complete') {
       return;
     }
 
@@ -287,13 +277,12 @@ class SafeStepsStore extends ChangeNotifier {
         await _visitorRepository.load();
 
     // The backend creates a NEW permanent
-    // completion notification. Reload the
-    // notification history so both the
-    // check-in and completion remain.
+    // completion notification.
     try {
       notifications =
-          await _visitorRepository
-              .loadNotifications();
+          await _visitorRepository.loadNotifications();
+
+      _sortNotifications();
     } catch (e) {
       debugPrint(
         'Could not refresh notifications '
@@ -314,10 +303,8 @@ class SafeStepsStore extends ChangeNotifier {
     final normalized =
         email.trim().toLowerCase();
 
-    for (final visitor
-        in visitors) {
-      if (visitor.email
-              .toLowerCase() ==
+    for (final visitor in visitors) {
+      if (visitor.email.toLowerCase() ==
           normalized) {
         return visitor;
       }
@@ -333,8 +320,7 @@ class SafeStepsStore extends ChangeNotifier {
   void setLocation(
     String location,
   ) {
-    currentLocation =
-        location;
+    currentLocation = location;
 
     notifyListeners();
   }
@@ -347,10 +333,8 @@ class SafeStepsStore extends ChangeNotifier {
     return visitors
         .where(
           (visitor) =>
-              visitor.status ==
-                  'Active' &&
-              visitor.checkOut ==
-                  null,
+              visitor.status == 'Active' &&
+              visitor.checkOut == null,
         )
         .length;
   }
@@ -359,12 +343,9 @@ class SafeStepsStore extends ChangeNotifier {
     return visitors
         .where(
           (visitor) =>
-              visitor.type ==
-                  'Group' &&
-              visitor.status ==
-                  'Active' &&
-              visitor.checkOut ==
-                  null,
+              visitor.type == 'Group' &&
+              visitor.status == 'Active' &&
+              visitor.checkOut == null,
         )
         .length;
   }
@@ -372,20 +353,15 @@ class SafeStepsStore extends ChangeNotifier {
   int get flaggedVisitors => 1;
 
   int get totalVisitsToday {
-    final now =
-        DateTime.now();
+    final now = DateTime.now();
 
     return visitors.where(
       (visitor) {
-        final date =
-            visitor.checkIn;
+        final date = visitor.checkIn;
 
-        return date.year ==
-                now.year &&
-            date.month ==
-                now.month &&
-            date.day ==
-                now.day;
+        return date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day;
       },
     ).length;
   }
@@ -396,8 +372,7 @@ class SafeStepsStore extends ChangeNotifier {
 // ==========================================
 
 class SafeStepsScope
-    extends InheritedNotifier<
-        SafeStepsStore> {
+    extends InheritedNotifier<SafeStepsStore> {
   const SafeStepsScope({
     super.key,
     required SafeStepsStore store,

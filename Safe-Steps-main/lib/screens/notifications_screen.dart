@@ -21,6 +21,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState
     extends State<NotificationsScreen> {
   Timer? _refreshTimer;
+
   bool _refreshing = false;
 
   @override
@@ -31,6 +32,8 @@ class _NotificationsScreenState
       (_) {
         _refreshNotifications();
 
+        // Refresh the notification history every
+        // 5 seconds so new activity appears.
         _refreshTimer = Timer.periodic(
           const Duration(seconds: 5),
           (_) => _refreshNotifications(),
@@ -71,6 +74,28 @@ class _NotificationsScreenState
     final store =
         SafeStepsScope.of(context);
 
+    // Make a separate copy so we do not change
+    // the original list inside SafeStepsStore.
+    final sortedNotifications =
+        List<ActivityNotification>.from(
+      store.notifications,
+    );
+
+    // Sort using the actual timestamp.
+    //
+    // Newest = largest DateTime
+    // Oldest = smallest DateTime
+    //
+    // Therefore the newer notification is placed
+    // before the older notification.
+    sortedNotifications.sort(
+      (a, b) {
+        return b.createdAt.compareTo(
+          a.createdAt,
+        );
+      },
+    );
+
     return AppShell(
       body: ListView(
         padding: const EdgeInsets.all(22),
@@ -88,7 +113,7 @@ class _NotificationsScreenState
 
           SectionCard(
             child: _buildNotifications(
-              store.notifications,
+              sortedNotifications,
             ),
           ),
 
@@ -113,17 +138,13 @@ class _NotificationsScreenState
                   text:
                       'The counsellor is still ongoing.',
                 ),
-
                 Divider(),
-
                 _Message(
                   name: 'John Smith',
                   text:
                       'The team will see you soon.',
                 ),
-
                 Divider(),
-
                 _Message(
                   name: 'Matt Denton',
                   text:
@@ -136,10 +157,6 @@ class _NotificationsScreenState
       ),
     );
   }
-
-  // ==========================================
-  // PERMANENT NOTIFICATION HISTORY
-  // ==========================================
 
   Widget _buildNotifications(
     List<ActivityNotification> notifications,
@@ -160,73 +177,16 @@ class _NotificationsScreenState
       );
     }
 
-    // Group notification events by visitor.
-    final Map<String, List<ActivityNotification>>
-        grouped = {};
-
-    for (final notification
-        in notifications) {
-      grouped
-          .putIfAbsent(
-            notification.visitorId,
-            () => [],
-          )
-          .add(notification);
-    }
-
-    // Sort each visitor's events newest first.
-    for (final events in grouped.values) {
-      events.sort(
-        (a, b) =>
-            b.createdAt.compareTo(
-          a.createdAt,
-        ),
-      );
-    }
-
-    // Sort visitors by their newest event.
-    final groups =
-        grouped.values.toList()
-          ..sort(
-            (a, b) =>
-                b.first.createdAt.compareTo(
-              a.first.createdAt,
-            ),
-          );
-
-    // Flatten the groups.
-    //
-    // This keeps each visitor's activity
-    // together while keeping the newest
-    // visitor activity group first.
-    final displayedNotifications =
-        <ActivityNotification>[];
-
-    for (final group in groups) {
-      displayedNotifications.addAll(group);
-    }
-
-    final limitedNotifications =
-        displayedNotifications
-            .take(20)
-            .toList();
-
     return Column(
       children: [
         for (int i = 0;
-            i <
-                limitedNotifications
-                    .length;
+            i < notifications.length;
             i++) ...[
           _ActivityNotice(
-            notification:
-                limitedNotifications[i],
+            notification: notifications[i],
           ),
 
-          if (i <
-              limitedNotifications
-                      .length -
-                  1)
+          if (i < notifications.length - 1)
             const Divider(),
         ],
       ],
@@ -234,12 +194,11 @@ class _NotificationsScreenState
   }
 }
 
-// ============================================
+// ==========================================
 // ACTIVITY NOTIFICATION
-// ============================================
+// ==========================================
 
-class _ActivityNotice
-    extends StatelessWidget {
+class _ActivityNotice extends StatelessWidget {
   const _ActivityNotice({
     required this.notification,
   });
@@ -248,72 +207,23 @@ class _ActivityNotice
 
   @override
   Widget build(BuildContext context) {
-    final isComplete =
-        notification.activityType ==
-            'complete';
+    final isCheckIn =
+        notification.activityType == 'check_in';
 
-    final String title;
-    final IconData icon;
-    final Color iconColor;
+    final title = isCheckIn
+        ? '${notification.visitorName} checked in'
+        : '${notification.visitorName} completed their visit';
 
-    if (isComplete) {
-      title =
-          '${notification.visitorName} '
-          'completed their visit';
+    final icon = isCheckIn
+        ? Icons.check_box_outlined
+        : Icons.check_circle_outline;
 
-      icon =
-          Icons.check_circle_outline;
+    final iconColor =
+        isCheckIn ? Colors.green : Colors.grey;
 
-      iconColor =
-          Colors.grey;
-    } else {
-      title =
-          '${notification.visitorName} '
-          'checked in';
-
-      icon =
-          Icons.check_box_outlined;
-
-      iconColor =
-          Colors.green;
-    }
-
-    return ListTile(
-      dense: true,
-      contentPadding:
-          EdgeInsets.zero,
-
-      leading: Icon(
-        icon,
-        size: 20,
-        color: iconColor,
-      ),
-
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight:
-              FontWeight.w600,
-        ),
-      ),
-
-      subtitle: Padding(
-        padding:
-            const EdgeInsets.only(
-          top: 3,
-        ),
-        child: Text(
-          _activityDetails(
-            notification,
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _activityDetails(
-    ActivityNotification notification,
-  ) {
+    // The database stores the timestamp as a
+    // real DateTime. Convert it to the local
+    // time of the computer/tablet/browser.
     final localTime =
         notification.createdAt.toLocal();
 
@@ -332,21 +242,41 @@ class _ActivityNotice
             ? 'PM'
             : 'AM';
 
-    final location =
-        notification.location.trim();
-
-    if (location.isEmpty) {
-      return '$hour:$minute $period';
-    }
-
-    return '$location • '
+    final time =
         '$hour:$minute $period';
+
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+
+      leading: Icon(
+        icon,
+        size: 20,
+        color: iconColor,
+      ),
+
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+
+      subtitle: Padding(
+        padding: const EdgeInsets.only(
+          top: 3,
+        ),
+        child: Text(
+          '${notification.location} • $time',
+        ),
+      ),
+    );
   }
 }
 
-// ============================================
-// DEMO MESSAGES
-// ============================================
+// ==========================================
+// MESSAGE
+// ==========================================
 
 class _Message extends StatelessWidget {
   const _Message({
@@ -358,13 +288,10 @@ class _Message extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return ListTile(
       dense: true,
-      contentPadding:
-          EdgeInsets.zero,
+      contentPadding: EdgeInsets.zero,
 
       leading: const CircleAvatar(
         radius: 15,
@@ -380,8 +307,7 @@ class _Message extends StatelessWidget {
       title: Text(
         name,
         style: const TextStyle(
-          fontWeight:
-              FontWeight.w700,
+          fontWeight: FontWeight.w700,
         ),
       ),
 

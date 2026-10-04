@@ -45,8 +45,7 @@ class VisitorRepository {
       );
     }
 
-    final decoded =
-        jsonDecode(response.body);
+    final decoded = jsonDecode(response.body);
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception(
@@ -54,8 +53,7 @@ class VisitorRepository {
       );
     }
 
-    final rawVisitors =
-        decoded['visitors'];
+    final rawVisitors = decoded['visitors'];
 
     if (rawVisitors is! List) {
       throw Exception(
@@ -99,8 +97,7 @@ class VisitorRepository {
       );
     }
 
-    final decoded =
-        jsonDecode(response.body);
+    final decoded = jsonDecode(response.body);
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception(
@@ -137,6 +134,21 @@ class VisitorRepository {
   Future<Visitor> add(
     Visitor visitor,
   ) async {
+    // Start with the normal visitor JSON.
+    final visitorData = visitor.toJson();
+
+    // Explicitly send the check-in timestamp
+    // as UTC with the timezone information included.
+    //
+    // Example:
+    // Local:  8:45 PM
+    // UTC:    9:45 AM
+    //
+    // PostgreSQL TIMESTAMPTZ will store the
+    // correct point in time.
+    visitorData['checkIn'] =
+        visitor.checkIn.toUtc().toIso8601String();
+
     final response = await http
         .post(
           Uri.parse(_visitorsUrl),
@@ -147,7 +159,7 @@ class VisitorRepository {
                 'application/json',
           },
           body: jsonEncode(
-            visitor.toJson(),
+            visitorData,
           ),
         )
         .timeout(
