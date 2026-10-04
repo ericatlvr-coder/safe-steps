@@ -41,8 +41,9 @@ class Visitor {
       contactNumber: contactNumber,
       checkIn: checkIn,
 
-      // If changing back to Active,
-      // this clears the previous checkout time.
+      // If clearCheckOut is true, remove the previous
+      // checkout time. Otherwise keep the existing time
+      // unless a new one is supplied.
       checkOut: clearCheckOut
           ? null
           : checkOut ?? this.checkOut,
@@ -62,16 +63,23 @@ class Visitor {
       purpose: json['purpose'].toString(),
       location: json['location'].toString(),
       hostName: json['hostName'].toString(),
+
       contactNumber:
           (json['contactNumber'] ?? '').toString(),
+
+      // Convert the timestamp received from the backend
+      // into the computer/device's local timezone.
       checkIn: DateTime.parse(
         json['checkIn'].toString(),
-      ),
+      ).toLocal(),
+
+      // Do the same for checkout time.
       checkOut: json['checkOut'] == null
           ? null
           : DateTime.tryParse(
               json['checkOut'].toString(),
-            ),
+            )?.toLocal(),
+
       status: json['status'].toString(),
     );
   }
@@ -86,8 +94,13 @@ class Visitor {
       'location': location,
       'hostName': hostName,
       'contactNumber': contactNumber,
+
+      // Keep timestamps in ISO format when sending
+      // visitor data to the backend.
       'checkIn': checkIn.toIso8601String(),
+
       'checkOut': checkOut?.toIso8601String(),
+
       'status': status,
     };
   }

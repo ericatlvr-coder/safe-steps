@@ -94,9 +94,9 @@ class AdminDashboardScreen extends StatelessWidget {
                       ),
                     ],
 
-                    // The Railway API already
-                    // returns newest visitors first.
-                    // Do not reverse this list.
+                    // The Railway API returns the newest
+                    // visitors first, so do not reverse
+                    // the list here.
                     rows: store.visitors
                         .take(8)
                         .map(
@@ -129,9 +129,8 @@ class AdminDashboardScreen extends StatelessWidget {
                         ),
                       );
 
-                      // Refresh the visitor
-                      // list after returning
-                      // from manual entry.
+                      // Refresh the visitor list
+                      // after returning from manual entry.
                       await store
                           .refreshVisitors();
                     },
@@ -198,17 +197,18 @@ class AdminDashboardScreen extends StatelessWidget {
     Visitor visitor,
   ) {
     final isComplete =
-        visitor.status ==
-            'Complete';
+        visitor.status == 'Complete';
 
     return DataRow(
       cells: [
         DataCell(
           Text(visitor.name),
         ),
+
         DataCell(
           Text(visitor.type),
         ),
+
         DataCell(
           Text(
             formatTime(
@@ -216,15 +216,18 @@ class AdminDashboardScreen extends StatelessWidget {
             ),
           ),
         ),
+
         DataCell(
           Text(visitor.purpose),
         ),
+
         DataCell(
           StatusPill(
             label:
                 visitor.status,
           ),
         ),
+
         DataCell(
           isComplete
               ? const Icon(
@@ -261,8 +264,8 @@ class AdminDashboardScreen extends StatelessWidget {
     SafeStepsStore store,
     Visitor visitor,
   ) {
-    if (visitor.status ==
-        'Complete') {
+    // Completed visitors cannot be edited.
+    if (visitor.status == 'Complete') {
       return;
     }
 
@@ -278,15 +281,16 @@ class AdminDashboardScreen extends StatelessWidget {
             mainAxisSize:
                 MainAxisSize.min,
             crossAxisAlignment:
-                CrossAxisAlignment
-                    .start,
+                CrossAxisAlignment.start,
             children: [
               const Text(
                 'Change visitor status:',
               ),
+
               const SizedBox(
                 height: 12,
               ),
+
               Text(
                 'Current status: ${visitor.status}',
                 style:
@@ -379,9 +383,11 @@ class AdminDashboardScreen extends StatelessWidget {
                   FontWeight.w800,
             ),
           ),
+
           const SizedBox(
             height: 4,
           ),
+
           Text(
             label,
             textAlign:
